@@ -64,24 +64,28 @@ function getPartURLs(response) {
 
 function uploadParts(response){
     console.log("uploadParts() Executed");
-    createChunks(document.querySelector('input[type="file"]').files[0], fileSize / parts);
+    createChunks(document.querySelector('input[type="file"]').files[0], Math.floor(fileSize / parts)); 
     console.log(response.parts);
     console.log(chunks);
     let responseParts = response.parts;
-    responseParts.forEach((element, index) => {
+    let i = 0;
+    responseParts.forEach((element) => {
         let url = element.upload_link;
         console.log(url);
-        let data = chunks[index];
-        console.log("chunks index: " + data);
+        let data = chunks[i];
+        console.log("chunks index: " + i);
         const options = {
             method: 'PUT',
             upload: {
                 "mime_type": "video/mp4"
-              },
-            "data": data
+            },
+            data: {
+                "data": data
+            }
         }
         fetch(url, options)
         .catch(err => console.error(err));
+        i++;
         });
         setTimeout(() => {
             completeUpload();
@@ -108,7 +112,7 @@ function createChunks (file,cSize/* cSize should be bytes */) {
     let startPointer = 0;
     let endPointer = file.size;
     chunks = [];
-    while(startPointer<endPointer){
+    while(startPointer<endPointer - cSize){
         let newStartPointer = startPointer+cSize;
         chunks.push(file.slice(startPointer,newStartPointer, "video/mp4")); 
         startPointer = newStartPointer;
@@ -116,36 +120,11 @@ function createChunks (file,cSize/* cSize should be bytes */) {
     return chunks;
 }
 
-// function createChunks(){
-//     console.log("createChunks() Executed");
-//     let file = document.querySelector('input[type="file"]').files[0];
-//     console.log(file);
-//     let chunkSize = fileSize / parts;
-//     console.log("chunk size: " + chunkSize + " bytes");
-//     let chunks = Math.ceil(fileSize/chunkSize,chunkSize);
-//     let chunk = 0;
-//     chunks2 = [];
-
-//     console.log('file size..',fileSize);
-//     console.log('chunks...',chunks);
-// //build an if statement somewher here to say @if less that chunkSize, add to chunks2 array. This should add all parts, including last one which is smaller than the others.
-//     while (chunk <= chunks) {
-//         var offset = chunk*chunkSize;
-//         console.log('current chunk..', chunk);
-//         console.log('offset...', chunk*chunkSize);
-//         console.log('file blob from offset...', offset)
-//         console.log(file.slice(offset,offset+chunkSize));
-//         chunks2.push(file.slice(offset,offset+chunkSize));
-//         chunk++;
-//     }
-//     console.log(chunks2);
-// }
-
 function getPartsCount(){
     let minimumPartSize = 5.24288; //MB
     let size = byteToMegabyte(fileSize);
     console.log("File size: " + size + "MB");
-    parts = Math.floor((size * minimumPartSize) / 100);
+    parts = Math.ceil((size * minimumPartSize) / 100);
     console.log("Parts: " + parts);
 }
 
@@ -155,4 +134,4 @@ function byteToMegabyte(x){
         n = n/1024;
     }
     return(n.toFixed(n < 10 && l > 0 ? 1 : 0));
-  }
+}
